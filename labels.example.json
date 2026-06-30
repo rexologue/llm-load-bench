@@ -1,0 +1,6 @@
+{
+  "vllm_qwen35_fp8_2x4090_bench": "vLLM Qwen3.5 35B A3B",
+  "sglang_qwen35_fp8_2x4090_bench": "SGLang Qwen3.5 35B A3B",
+  "vllm_gemma4_mtp_fp8_2x4090_bench": "vLLM Gemma4 26B MTP",
+  "vllm_gemma4_fp8_2x4090_bench": "vLLM Gemma4 26B"
+}

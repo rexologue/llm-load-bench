@@ -86,3 +86,51 @@ Other HTML flags: `--html-name confluence_report.html`, `--title "SG Lang vs vLL
 
 If your instance strips data-URIs or the embedded page is too heavy, switch to
 `link` mode and lower `--dpi`.
+
+---
+
+## Self-hosted Confluence (Server / Data Center) — the on-prem path
+
+On-prem Confluence strips `data:` image URIs on paste, so `--html-img embed` will
+**not** show images there. Use attachment-based output instead. Two routes:
+
+### A. One command via REST (recommended)
+
+```bash
+# 1) build storage-format XML + flat attachment PNGs
+python bench_report.py --reports-dir ./results --out-dir ./plots --labels labels.json \
+    --confluence --title "SG Lang vs vLLM на 2x4090"
+
+# 2) create an empty page in the UI, grab its numeric pageId, then publish:
+python confluence_publish.py \
+    --base-url https://confluence.corp.local \
+    --page-id 123456789 \
+    --token "$CONFLUENCE_TOKEN" \
+    --body ./plots/confluence_storage.xml \
+    --assets ./plots/html_assets
+```
+
+`--confluence` emits `confluence_storage.xml` (native Confluence Storage Format:
+`<ac:image><ri:attachment>` for figures, anchor macros for the nav table and the
+**(Обратно)** links) plus one flat PNG per figure in `html_assets/`.
+
+`confluence_publish.py` uploads every PNG as a page attachment and replaces the
+page body — one shot, no manual image dragging. Auth is a **Personal Access
+Token** (Confluence Server/DC 7.9+: Profile → Settings → Personal Access Tokens);
+pass it via `--token` or the `CONFLUENCE_TOKEN` env var. Use `--dry-run` first to
+see the plan without writing, and `--verify-tls false` for self-signed corp certs.
+
+> The page must already exist (publisher overwrites its body); point `--page-id` at it.
+
+### B. No API access (manual, still no per-image dragging)
+
+If you can't get a token: open the page attachments view and bulk-upload everything
+in `html_assets/` at once (multi-select drag), then paste the contents of
+`confluence_storage.xml` via the page's source/storage editor. The `<img>`
+references resolve against the attachments by filename.
+
+### C. HTML macro (only if your admin enabled it)
+
+If the `{html}` macro is enabled, you can paste the `--html --html-img embed`
+output inside it and images render from base64. Most locked-down corporate
+instances keep this macro disabled, so prefer route A.
